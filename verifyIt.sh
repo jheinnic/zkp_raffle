@@ -1,0 +1,4 @@
+#!/bin/sh
+
+bb verify -p ./target/proof -k ./target/vk
+

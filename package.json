@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@noble/curves": "^2.0.1",
+    "indexed-merkle-noir": "github:jheinnic/indexed-merkle-noir#0.0.6",
+    "binary-merkle-noir": "github:thermofisher-jch/binary-merkle-noir#v0.0.1"
+  }
+}

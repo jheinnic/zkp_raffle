@@ -1,0 +1,11 @@
+[package]
+name = "zkp_raffle"
+type = "bin"
+authors = ["John Heinnickel"]
+
+[dependencies]
+ec = { tag = "v0.1.2", git = "https://github.com/noir-lang/ec" }
+#ecdh = { git = "https://github.com/zk-kit/zk-kit.noir", tag = "ecdh-v0.0.1", directory = "packages/ecdh" }
+# merkle = { git = "https://github.com/jheinnic/indexed-merkle-noir", tag = "0.0.6" }
+poseidon = { tag = "v0.1.1", git = "https://github.com/noir-lang/poseidon" }
+merkle = { tag = "v0.0.1", git = "https://github.com/thermofisher-jch/binary-merkle-noir" }

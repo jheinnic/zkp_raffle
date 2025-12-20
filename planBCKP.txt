@@ -1,0 +1,71 @@
+APriori:
+-- A raffle master private key, dA (Held in HSM)
+-- The raffle master public key, PA (Public)
+-- The number of raffle tickets in our Merkle Tree, M (Public)
+-- A set of N prize values (Public)
+-- A sequence of M unique private keys, dBi (1 <= i <= M) (Held securely/offline)
+-- A sequence of M unique public keys, PBi (1 <= i <= M) (Public)
+-- The Merkle Tree root for PBi, R (Public)
+
+Using secure resources:
+1)  Shuffles the indices 1 through M and keep only the top N
+2)  Shuffle the indices 1 through N 
+3)  Store the (i, k) winner pairs by zipping (1) and (2) in offline storage.
+4)  Retrieve PBi for each winning pair and use the HSM to create a Prize list mapping each k for from the prize catalog to Sik = Raffle_PrivateKey * PBi
+5)  With Sik and PA as public information, prove that we know PathPBi and dBi such that:
+  -- DBi * PA = Sik
+  -- DBi * G = PBi 
+  -- PathPBi is the MerkleProof(PBi).
+6)  Prizes may be revealed individually by revealing dBi or simultaneously by revealing Raffle_PrivateKey.
+
+
+Retrieve dBi, Si, and PathSi to prove each prize is in the Raffle Ticket Merkle tree, and 
+    that we know its location and the reveal key that exposes the winner once published.
+    -- Si is already in the published Merkle Tree, and anyone can calculate or verify its Commitment
+       Proof Path.  This holds for every other S committed to the Merkle Tree.  What is secret here
+       is which prize a particular Si with proof path PathSi has been selected to receive
+    -- To cheat, we would have to find some other dB that combines with PA to produce one of the
+       other raffle ticket S values _and_ multiplies with G to yield the same Prize ID.  Our raffle
+       can be trusted because that is a computationally imparactical problem to try solving.
+6)  For each (PA, PBi, R), prove knowledge about witness (dBi, Si, PathSi)
+    -- R is the Merkle Root for a commitment of Si with proof path PathSi
+    -- dB*PA = S
+    -- dB*G = PB
+    -- [PathSi] <-relTo-> (R) <-relTo-> [Si] <-relTo-> (PA)        [dBi] <-relTo-> (PBi) 
+                                         |                           |
+                                         \-----------relTo-----------/
+       -- [] are proven known but not revealed
+       -- () are public givens
+   -- Each proof publicly uses the Master public key (PA), one specific prize public key, and the
+      Merkle Root for all raffle tickets.
+   -- Each proves that a winning raffle ticket for the refernced prize is committed in the Merkle
+      tree, that we know which ticket it is, and that we know a private key that will expose the
+      winning ticket.  These facts are proving without revealing their values, but the nature of 
+      the proof shows it would be computationally infeasible for us to cheat by trying to change
+      the winning ticket after the fact.
+   -- An accompanying smart contract is required that guarantees procedural aspects:
+      -- All raffle tickets are treated equally until the game ends
+      -- Sets a time frame for the game to end
+      -- Requires the operator to either reveal and distribute prizes or refund ticket holders and 
+         suffer an self-imposed penalty if prizes are withheld.
+ 
+3)  This series of proofs establishes:
+-- Every k from N is represented by an unrevealed PB that is somewhere in the ticket sequence,
+   and PA 
+-- (dA, dB, i) as the reveal tuple for each prize, K
+
+TODO:
+-- Nonrepudiability is needed.  We can currently prove there is a ticket for each prize, but PA is not enough to prove we cannot move the prize
+   -- S might be a public value (cheaper, possibly riskier)
+   -- S might be used to encrypt k and the ciphertext stored with PB in the Merkle Node of a Raffle Ticket
+   -- Perhaps dA and PA are singletons, like R.  PA would be public, dA never revealed.
+      -- S is publicly known as the point for prize k
+      -- PB is publicly known as the ticket for raffle index i
+      -- Revealing the pair (dB, i) reveals that ticket i wins prize k
+         -- The merkle leaf at ticket index i is PB
+         -- dB*G = PB
+         -- dB*PA = S
+      -- dA _never_ leaves the cryptography HSM.
+      -- (dB, i) only leaves the cryptography HSM on reveal
+      -- (dC, j) for all non-winning tickets should be stored if possible, but SC is never used
+         for anythin
