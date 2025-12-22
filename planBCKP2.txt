@@ -1,0 +1,77 @@
+APriori:
+-- A master private key, dA, and its public key, PA
+-- The number of raffle tickets in our Merkle Tree, M
+-- The catalog of prizes, of size N
+-- A sequence of M unique private keys, dBi
+-- A sequence of M unique public keys, PBi
+-- A Merkle Tree of M Diffie-Hellman Keys, Si = dA*PBi
+-- Merkle Tree root R
+-- A bloom filter, B, built from the PBi to ensure uniqueness
+
+Using secure resources:
+1)  Shuffles the indices 1 through M and keep only the top N
+2)  Shuffle the indices 1 through N 
+3)  Store the (i, k) winner pairs by zipping (1) and (2) with top security
+4)  Retrieve PBi for each k to publish the labels for each prize publicly.
+5)  Retrieve dBi, Si, and PathSi to prove each prize is in the Raffle Ticket Merkle tree, and 
+    that we know its location and the reveal key that exposes the winner once published.
+    -- Si is already in the published Merkle Tree, and anyone can calculate or verify its Commitment
+       Proof Path.  This holds for every other S committed to the Merkle Tree.  What is secret here
+       is which prize a particular Si with proof path PathSi has been selected to receive
+    -- To cheat, we would have to find some other dB that combines with PA to produce one of the
+       other raffle ticket S values _and_ multiplies with G to yield the same Prize ID.  Our raffle
+       can be trusted because that is a computationally imparactical problem to try solving.
+6)  For each (PA, PBi, Si, R), prove knowledge about witness (dBi, i, PathSi)
+    -- R is the Merkle Root for a commitment of Si with proof path PathSi
+    -- dB*PA = S
+    -- dB*G = PB
+    -- [PathSi] <-relTo-> (R) <-relTo-> [Si] <-relTo-> (PA)        [dBi] <-relTo-> (PBi) 
+                                         |                           |
+                                         \-----------relTo-----------/
+       -- [] are proven known but not revealed
+       -- () are public givens
+   -- Each proof publicly uses the Master public key (PA), one specific prize public key, and the
+      Merkle Root for all raffle tickets.
+   -- Each proves that a winning raffle ticket for the referenced prize is committed in the Merkle
+      tree, that we know which ticket it is, and that we know a private key that will expose the
+      winning ticket.  These facts are proving without revealing their values, but the nature of 
+      the proof shows it would be computationally infeasible for us to cheat by trying to change
+      the winning ticket after the fact.
+   -- An accompanying smart contract is required that guarantees procedural aspects:
+      -- All raffle tickets are treated equally until the game ends
+      -- Sets a time frame for the game to end
+      -- Requires the operator to either reveal and distribute prizes or refund ticket holders and 
+         suffer an self-imposed penalty if prizes are withheld.
+ 
+3)  This series of proofs establishes:
+-- Every k from N is represented by an unrevealed PB that is somewhere in the ticket sequence,
+   and PA 
+-- (dA, dB, i) as the reveal tuple for each prize, K
+
+TODO:
+-- Nonrepudiability is needed.  We can currently prove there is a ticket for each prize, but PA is not enough to prove we cannot move the prize
+   -- S might be a public value (cheaper, possibly riskier)
+   -- S might be used to encrypt k and the ciphertext stored with PB in the Merkle Node of a Raffle Ticket
+   -- Perhaps dA and PA are singletons, like R.  PA would be public, dA never revealed.
+      -- S is publicly known as the point for prize k
+      -- PB is publicly known as the ticket for raffle index i
+      -- Revealing the pair (dB, i) reveals that ticket i wins prize k
+         -- The merkle leaf at ticket index i is PB
+         -- dB*G = PB
+         -- dB*PA = S
+      -- dA _never_ leaves the cryptography HSM.
+      -- (dB, i) only leaves the cryptography HSM on reveal
+      -- (dC, j) for all non-winning tickets should be stored if possible, but SC is never used
+         for anything
+      -- [PathPBi] <-relTo-> (R) <-relTo-> [PBi] <...... [dBi] <-relTo-> (Si) 
+                                                               |                           |
+                                                               \----------relTo-----------/
+
+Ticket Payload
+==============
+-- An ECC point is a pair of values from a field with ~256 bits, so the whole thing is ~512 bits.
+-- Using Posseidon2 as a hash function limits us to 256 bit leaves in the Merkle tree.
+-- Our proof must assert computation that PBi and dBi satisfy some constraint that binds them
+   together so that the secret of where the key is hidden and the secret of which private key
+   yields the prize value are mutually constrained to be related
+   

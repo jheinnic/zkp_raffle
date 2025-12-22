@@ -1,2 +1,11 @@
-x = "1"
-y = "3"
+index = ""
+index_bits = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+path = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+prize_ecdhkey_x = ""
+prize_ecdhkey_y = ""
+raffle_pubkey_x = ""
+raffle_pubkey_y = ""
+ticket_priv_key = ""
+ticket_pubkey_x = ""
+ticket_pubkey_y = ""
+tickets_merkle_root = ""
