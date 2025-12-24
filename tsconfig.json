@@ -1,0 +1,40 @@
+{
+   "compilerOptions": {
+      "target": "es2022",
+      "module": "node16",
+      "lib": ["DOM", "ES2022"],
+      "moduleResolution": "node16",
+      "outDir": "./build",
+      "rootDir": "./scripts",
+      "noLib": false,
+      "noEmit": false,
+      "allowJs": true,
+      "sourceMap": true,
+      "importHelpers": true,
+      "isolatedModules": false,
+      "skipLibCheck": true,
+      "alwaysStrict": true,
+      "strictNullChecks": true,
+      "noImplicitAny": true,
+      "strictFunctionTypes": true,
+      "strictPropertyInitialization": true,
+      "noImplicitThis": true,
+      "noImplicitReturns": true,
+      "noFallthroughCasesInSwitch": true,
+      "forceConsistentCasingInFileNames": true,
+      "allowSyntheticDefaultImports": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "esModuleInterop": true
+   },
+   "include": [
+      "./scripts/**/*.ts"
+   ],
+   "references": [],
+   "exclude": [
+      "./node_modules/**/*",
+      "./build/**/*",
+      "**/*.spec.ts",
+      "./.history/**/*"
+   ]
+}
