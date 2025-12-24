@@ -1,0 +1,1 @@
+{"root":["./scripts/AdHocProofPull.ts","./scripts/CeremonyContainer.ts","./scripts/InterimKeyRing.ts","./scripts/MintingCeremony.ts","./scripts/NoirPoseidon2Hasher.ts","./scripts/RunTest.ts"],"errors":true,"version":"5.9.3"}
