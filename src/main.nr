@@ -3,10 +3,8 @@ use dep::merkle::{MAX_DEPTH,verifyProof};
 
 global TREE_DEPTH: u32 = MAX_DEPTH;
 
+global TICKET_DOMAIN: Field = 0;
 global PRIZE_DOMAIN: Field = 3;
-
-// Max usable field value
-// global NOIR_FIELD_MAX: Field = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000;
 
 fn main(
     // Public Inputs
@@ -31,27 +29,31 @@ fn main(
     let ticket_priv_scalar = EmbeddedCurveScalar::from_field(ticket_priv_key);
     let raffle_pub_point = EmbeddedCurvePoint { x: raffle_pubkey_x, y: raffle_pubkey_y, is_infinite: false };
 
-    // 1. Prove Ticket Membership: The Ticket PubKey is in the Merkle Tree
-    verifyProof(index, index_bits, [ticket_pubkey_x, ticket_pubkey_y], path, tickets_merkle_root);
-    // prove_ticket_commitment(index, index_bits, ticket_pubkey_hash, path, tickets_merkle_root);
+    // 1. Prove that this ticket's private scalar * Grumpkin's generator is the curve point used as this ticket's
+    //    Poseidon2 pre-image in the raffle inventory Merkle tree.
+    validate_ticket_point(ticket_priv_scalar, ticket_pubkey_x, ticket_pubkey_y, ticket_pubkey_hash);
 
-    // 2. Prove Reveal Key Authority: ticket_priv_key corresponds to ticket_pubkey
-    validate_ticket_point(ticket_priv_scalar, ticket_pubkey_x, ticket_pubkey_y);
+    // 2. Prove Ticket is committed to Raffle Inventory Merkle Tree: The Ticket PubKey Hash is in the Merkle Tree
+    verifyProof(index, index_bits, [ticket_pubkey_x, ticket_pubkey_y, 0], path, tickets_merkle_root);
 
-    // 3. Prove Prize Point is derived from ticket_priv_key
+    // 3. Prove that the public prize hash in this proof is its ticket's prize because the point that is its pre-image
+    //    is the raffle's public point multiplied by this ticket's private scalar.
     validate_prize_point(ticket_priv_scalar, raffle_pub_point, prize_ecdhkey_x, prize_ecdhkey_y, prize_ecdhkey_hash)
 }
 
 fn validate_ticket_point(
     ticket_priv_scalar: EmbeddedCurveScalar, 
     ticket_pub_x: Field,
-    ticket_pub_y: Field
+    ticket_pub_y: Field,
+    ticket_pub_hash: Field
 ) {
     // 3. Link Reveal Key to Prize Point: dBi * PA = prize_ecdhkey_k
     // We treat the Ticket Private Key as a scalar
     let ticket_point = fixed_base_scalar_mul(ticket_priv_scalar);
     assert(ticket_point.x == ticket_pub_x);
     assert(ticket_point.y == ticket_pub_y);
+    let ticket_hash = poseidon::poseidon2::Poseidon2::hash([TICKET_DOMAIN, ticket_pub_x, ticket_pub_y, (ticket_point.is_infinite as Field)], 4);
+    assert(ticket_hash == ticket_pub_hash)
 }
 
 fn validate_prize_point(
@@ -66,7 +68,7 @@ fn validate_prize_point(
     assert(prize_point.x == prize_ecdh_x);
     assert(prize_point.y == prize_ecdh_y);
 
-    let prize_point_hash = poseidon::poseidon2::Poseidon2::hash([PRIZE_DOMAIN, prize_point.x, prize_point.y], 3);
+    let prize_point_hash = poseidon::poseidon2::Poseidon2::hash([PRIZE_DOMAIN, prize_point.x, prize_point.y, 0], 4);
     assert(prize_point_hash == prize_ecdh_hash)
 }
 
