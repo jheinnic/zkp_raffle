@@ -4,11 +4,15 @@
     "@aztec/foundation": "^2.1.9",
     "@aztec/kv-store": "^2.1.9",
     "@aztec/merkle-tree": "^2.1.9",
+    "@aztec/noir-noirc_abi": "^2.1.9",
     "@dotenvx/dotenvx": "^1.51.2",
     "@noble/curves": "^2.0.1",
+    "@noir-lang/noir_js": "^1.0.0-beta.17",
+    "@noir-lang/noir_wasm": "^1.0.0-beta.17",
     "@zkpassport/poseidon2": "^0.6.2",
     "binary-merkle-noir": "github:thermofisher-jch/binary-merkle-noir#v0.0.2",
-    "leveldown": "^6.1.1"
     "dotenv": "^17.2.3",
+    "leveldown": "^6.1.1",
+    "typescript": "^5.9.3"
   }
 }
