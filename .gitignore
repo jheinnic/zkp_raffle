@@ -8,3 +8,4 @@ Provers/
 **/.*.swp
 
 .env.keys
+logs/
