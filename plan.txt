@@ -1,0 +1,51 @@
+APriori:
+-- The number of raffle tickets in our Merkle Tree, M
+-- The catalog of prizes, of size N
+-- A sequence of M-N public keys
+-- A bloom filter, B, loaded with all M-N public keys
+
+Offline:
+1)  For each prize k < N
+2)  Generate dA, dB, and a unique i < M
+3)  Derive PA = dA*G and PB = dB*G
+4)  Confirm PA and PB can be inserted to the bloom filter, B
+5)  Derive S = dA*PB or dB*PA
+6)  Record (k, PA), publicly
+7)  Record (dA, dB, i, PB, S), privately
+8)  Place PB in the Merkle Tree sequence at i
+
+Then, still Offline:
+1)  Calculate the Merkle Tree inner nodes and root to be made public
+2)  The Merkle Root, R, is a public input to each of the following proofs
+
+Offline:
+1)  For each (k, PA, R), prove knowledge about secrets (dA, dB, i, PB, S)
+    -- R is the Merkle Root of a commitment path from PB at index i
+    -- dA*PB = S
+    -- dB*PA = S
+    -- dA*G = PA
+    -- dB*G = PB
+2)  (i) <-relTo-> (R) <-relTo-> (PB) <-relTo-> (S) <-relTo-> (dB) <-relTo-> (PA) <-relTo-> (dA)
+                                  |                           |
+                                  \-----------relTo-----------/
+3)  This series of proofs establishes:
+-- Every k from N is represented by an unrevealed PB that is somewhere in the ticket sequence,
+   and PA 
+-- (dA, dB, i) as the reveal tuple for each prize, K
+
+TODO:
+-- Nonrepudiability is needed.  We can currently prove there is a ticket for each prize, but PA is not enough to prove we cannot move the prize
+   -- S might be a public value (cheaper, possibly riskier)
+   -- S might be used to encrypt k and the ciphertext stored with PB in the Merkle Node of a Raffle Ticket
+   -- Perhaps dA and PA are singletons, like R.  PA would be public, dA never revealed.
+      -- S is publicly known as the point for prize k
+      -- PB is publicly known as the ticket for raffle index i
+      -- Revealing the pair (dB, i) reveals that ticket i wins prize k
+         -- The merkle leaf at ticket index i is PB
+         -- dB*G = PB
+         -- dB*PA = S
+      -- dA _never_ leaves the cryptography HSM.
+      -- (dB, i) only leaves the cryptography HSM on reveal
+      -- (dC, j) for all non-winning tickets should be stored if possible, but SC is never used
+         for anything
+
