@@ -1,0 +1,106 @@
+import {readFileSync} from "fs";
+
+import { StandardTree, newTree, Poseidon } from '@aztec/merkle-tree';
+import { poseidon2HashWithSeparator, poseidon2Hash } from '@aztec/foundation/crypto/sync';
+import { AztecLmdbStore } from '@aztec/kv-store/lmdb';
+import { Fr } from '@aztec/foundation/fields';
+import { NoirPoseidon2Hasher } from "./NoirPoseidon2Hasher.js"
+
+export class NoirPoseidon2Hasher {
+  /**
+   * Satisfies the Hasher interface using the functional poseidon2
+   */
+  hash(lhs, rhs) {
+    const l = Fr.fromBuffer(Buffer.from(lhs));
+    const r = Fr.fromBuffer(Buffer.from(rhs));
+
+    // Calling the functional export directly
+    // This usually takes an array of Fr elements
+    const hash = poseidon2HashWithSeparator([l, r], 1).toBuffer();
+    // console.error("L = ", l, "; R = ", r, "; Sep = 1; Hash = ", hash);
+    return hash;
+  }
+
+  hashInputs(inputs) {
+    const fields = inputs.map(i => Fr.fromBuffer(i));
+    return poseidon2Hash(fields).toBuffer();
+  }
+}
+
+async function runMerkleExample() {
+    // 1. Setup the Database (Persistent storage for 30M leaves)
+    // const db = await openDb('merkle_db', leveldown, true);
+
+    // 30.5M leaves * 64 bytes (node + meta) is roughly 2GB.
+    // We set mapSize to 4GB to be safe.
+    const mapSizeKb = 4 * 1024;
+    const path = './merkle_lmdb';
+
+    // Static open method from your grep findings
+    const store = AztecLmdbStore.open(path, mapSizeKb, false);
+
+    // 2. Define Tree Parameters
+    // Height 25 can hold ~33 million leaves
+    const height = 24;
+    const name = 'PrizeTree';
+
+    // 3. Initialize the Tree
+    // We use Poseidon2 as the hasher (native to Noir)
+    const hasher = new NoirPoseidon2Hasher();
+    const tree = await newTree(StandardTree, store, hasher, name, Fr, height);
+
+    console.error('Zero(0): ', Fr.fromBuffer(tree.getZeroHash(24)));
+    console.error('Zero(23): ', Fr.fromBuffer(tree.getZeroHash(1)));
+
+    // Create a new tree
+    const data = readFileSync("leaves.dat")
+    const content = data.toString("utf8")
+    const leaves = content.split("\n")
+    const lastIndex = BigInt(leaves.length - 1)
+    const items = leaves.map((leaf, idx) => {
+        if ( leaf === "" ) {
+            return
+        }
+        const buf = Buffer.from(leaf, "hex")
+        return new Fr(
+	    poseidon2HashWithSeparator([buf.readBigUint64BE(), buf.readBigUint64BE(8)], 0));
+    })
+    items.pop()
+    console.error(JSON.stringify(items, replacer))
+    await tree.appendLeaves(items)
+    await tree.commit()
+
+    let idx = 0n
+    try{
+        while(idx < lastIndex) {
+            const proof = await tree.getSiblingPath(idx);
+            console.error('Proof Sibling Path Length:', proof.toBuffer().length);
+            console.error(proof)
+            // console.error(tree.verifyProof(proofOdd))
+            idx = idx + 1n;
+        }
+    } catch(err) {
+        console.error("Failed to prove index " + idx.toString(10) + " (Hex: " + idx.toString(16))
+        console.error(err)
+    }
+    
+    console.error(JSON.stringify(tree, replacer))
+
+    // 6. Get the Root
+    const root = tree.getRoot();
+    console.error('New Tree Root:', root.toString("hex"));
+
+    return { root };
+}
+    
+function replacer(key, value) {
+    // Check if the current value is a BigInt
+    if (typeof value === 'bigint') {
+        // Convert it to its string representation in hex
+        return value.toString(10);
+    }
+    // For all other types, return the value as is
+    return value;
+}
+
+console.error(await runMerkleExample().catch(console.error));
